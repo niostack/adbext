@@ -1,3 +1,11 @@
+# 为什么开发这个工具
+> 做群控的时候，经常需要修改设备的语言和时区，但是 Android 系统的adb并没有提供这样的功能，
+> 如果用点击交互的方式实现的话，不但效率低，而且还容易出错。
+> 所以开发了这个工具。
+
+# 怎么使用
+> 在realease目录下下载最新的apk文件，安装到手机上，然后通过下面的adb 命令使用。
+
 <p><b>本工具提供了通过 adb 命令修改系统语言和时区的功能，使用方式如下：</b></p>
 <p><b>第一步：授权本工具的修改系统设置权限</b></p>
 <p><code>adb shell pm grant com.niostack.adbext android.permission.CHANGE_CONFIGURATION</code></p>
