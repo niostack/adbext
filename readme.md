@@ -4,9 +4,11 @@
 <p><b>第二步：输入要修改的语言或时区</b></p>
 命令示例(修改语言为中文)：
 <p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es language zh</code></p>
-命令示例(修改时区为东八区)：
-<p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es timezone GMT+8</code></p>
-命令示例(修改语言为英国英文)：
-<p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es language en_GB</code></p>
+命令示例(修改时区为上海)：
+<p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es timezone Asia/Shanghai</code></p>
+命令示例(修改语言为英文)：
+<p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es language en</code></p>
 命令示例(修改时区为伦敦)：
 <p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es timezone Europe/London</code></p>
+命令示例(同时设置时间和时区)：
+<p><code>adb shell am start -n com.niostack.adbext/.MainActivity --es language en --es timezone Europe/London</code></p>
