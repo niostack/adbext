@@ -56,5 +56,5 @@ jobs:
           # See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: app/build/outputs/apk/release/app-release.apk
-          asset_name: App.apk
+          asset_name: adbext.apk
           asset_content_type: application/vnd.android.package-archiv
