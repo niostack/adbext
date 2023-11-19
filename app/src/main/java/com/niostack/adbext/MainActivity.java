@@ -201,7 +201,6 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
     private void setView() {
         TextView et_current_timezone = findViewById(R.id.et_current_timezone);
         TextView et_current_language = findViewById(R.id.et_current_language);
-        WebView tv_use_instructions_content = findViewById(R.id.tv_use_instructions_content);
         //获取当前手机系统语言
         String language = getResources().getConfiguration().locale.getLanguage();
         et_current_language.setText(language);
