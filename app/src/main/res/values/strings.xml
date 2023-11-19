@@ -3,6 +3,8 @@
     <string name="adbext">adbext</string>
     <string name="current_language">当前语言</string>
     <string name="current_timezone">当前时区</string>
+    <string name="device_admin">adbext Device Admin</string>
+    <string name="trying_to_connect_to">Trying to connect to:</string>
     <string name="use_instructions">使用说明</string>
     <string name="use_instructions_content">
         <![CDATA[
