@@ -35,22 +35,22 @@ adb shell am start -n com.niostack.adbext/.MainActivity --es language en --es ti
 命令示例(连接wifi)
 To join a wifi network with no password:
 ```shell
-adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity --es ssid SSID
+adb shell am start -n com.niostack.adbext/.MainActivity --es ssid SSID
 ```
 To join a password protected wifi network:
 ```shell
-adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+adb shell am start -n com.niostack.adbext/.MainActivity \
 --es ssid SSID --es password_type WEP|WPA --es password PASSWORD
 ```
 To join a wifi network and set a static proxy (with optional bypass list):
 ```shell
-adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+adb shell am start -n com.niostack.adbext/.MainActivity \
 --es ssid SSID --es password_type WEP|WPA --es password PASSWORD \
 --es proxy_host HOSTNAME --es proxy_port PORT [--es proxy_bypass COMMA,SEPARATED,LIST]
 ```
 To join a wifi network and set a proxy auto-configuration URL:
 ```shell
-adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity \
+adb shell am start -n com.niostack.adbext/.MainActivity \
 --es ssid SSID --es password_type WEP|WPA --es password PASSWORD \
 --es proxy_pac_uri http://my.pac/url
 ```
@@ -65,5 +65,5 @@ adb shell dpm set-device-owner "com.niostack.adbext/.AdminReceiver"
 ```
 This requires that your device has no provisioned accounts on it. If you wish to demote this app and remove its device owner privileges, run this:
 ```shell
-adb shell am start -n com.steinwurf.adbjoinwifi/.MainActivity --es clear_device_admin true
+adb shell am start -n com.niostack.adbext/.MainActivity --es clear_device_admin true
 ```
