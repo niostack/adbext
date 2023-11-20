@@ -37,19 +37,6 @@ import java.util.TimeZone;
 public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver.SSIDFoundListener {
     private static final String TAG = "adbext";
 
-    private static final String WEP_PASSWORD = "WEP";
-    private static final String WPA_PASSWORD = "WPA";
-
-    private static final String SSID = "ssid";
-    private static final String PASSWORD_TYPE = "password_type";
-    private static final String PASSWORD = "password";
-
-    private static final String PROXY_HOST = "proxy_host";
-    private static final String PROXY_PORT = "proxy_port";
-    private static final String PROXY_BYPASS = "proxy_bypass";
-    private static final String PROXY_PAC_URI = "proxy_pac_uri";
-
-    private static final String CLEAR_DEVICE_ADMIN = "clear_device_admin";
 
     String mSSID;
     String mPassword;
@@ -66,73 +53,80 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (getIntent().getExtras() != null) {
-            //设置系统时区
-            String timezone = getIntent().getStringExtra("timezone");
-            if (timezone != null) {
-                updateTimezone(timezone);
-            }
-            //设置系统语言
-            String language = getIntent().getStringExtra("language");
-            if (language != null) {
-                updateLocale(language);
-            }
-            boolean clearDeviceAdmin = getIntent().getExtras().containsKey(CLEAR_DEVICE_ADMIN);
+        if (getIntent().getExtras() == null) {
+            finish();
+            return;
+        }
+        //设置系统时区
+        String timezone = getIntent().getStringExtra("timezone");
+        if (timezone != null) {
+            updateTimezone(timezone);
+            finish();
+            return;
+        }
+        //设置系统语言
+        String language = getIntent().getStringExtra("language");
+        if (language != null) {
+            updateLocale(language);
+            finish();
+            return;
+        }
+        boolean clearDeviceAdmin = getIntent().getExtras().containsKey("clear_device_admin");
 
-            if (clearDeviceAdmin) {
-                clearDeviceOwner();
+        if (clearDeviceAdmin) {
+            clearDeviceOwner();
+            finish();
+            return;
+        }
+
+        // Get Content
+        mSSID = getIntent().getStringExtra("ssid");
+        if (mSSID != null) {
+            mPasswordType = getIntent().getStringExtra("password_type");
+            mPassword = getIntent().getStringExtra("password");
+
+            String proxyHost = getIntent().getStringExtra("proxy_host");
+            String proxyPort = getIntent().getStringExtra("proxy_port");
+            String proxyBypass = getIntent().getStringExtra("proxy_bypass");
+            String proxyPacUri = getIntent().getStringExtra("proxy_pac_uri");
+
+            // Validate
+            if ((mPasswordType != null && mPassword == null) || // "password" REQUIRED IF "password" TYPE GIVEN
+                    (mPassword != null && mPasswordType == null) || // "password" TYPE REQUIRED IF "password" GIVEN
+                    (mPasswordType != null && !mPasswordType.equals("WEP") && !mPasswordType.equals("WPA") && !mPasswordType.equals("WPA2"))) // "password" TYPE MUST BE NULL OR WPA OR WEP
+            {
                 finish();
                 return;
             }
 
-            // Get Content
-            mSSID = getIntent().getStringExtra(SSID);
-            if (mSSID != null) {
-                mPasswordType = getIntent().getStringExtra(PASSWORD_TYPE);
-                mPassword = getIntent().getStringExtra(PASSWORD);
-
-                String proxyHost = getIntent().getStringExtra(PROXY_HOST);
-                String proxyPort = getIntent().getStringExtra(PROXY_PORT);
-                String proxyBypass = getIntent().getStringExtra(PROXY_BYPASS);
-                String proxyPacUri = getIntent().getStringExtra(PROXY_PAC_URI);
-
-                // Validate
-                if ((mPasswordType != null && mPassword == null) || // PASSWORD REQUIRED IF PASSWORD TYPE GIVEN
-                        (mPassword != null && mPasswordType == null) || // PASSWORD TYPE REQUIRED IF PASSWORD GIVEN
-                        (mPasswordType != null && !mPasswordType.equals(WPA_PASSWORD) && !mPasswordType.equals(WEP_PASSWORD))) // PASSWORD TYPE MUST BE NULL OR WPA OR WEP
-                {
-                    return;
-                }
-
-                try {
-                    mProxyInfo = Proxy.parseProxyInfo(proxyHost, proxyPort, proxyBypass, proxyPacUri);
-                } catch (ParseException e) {
-                    Log.d(TAG, "Error parsing proxy settings");
-                    return;
-                }
-
-                Log.d(TAG, "Trying to join:");
-                Log.d(TAG, "SSID: " + mSSID);
-                if (mPasswordType != null && mPassword != null) {
-                    Log.d(TAG, "Password Type: " + mPasswordType);
-                    Log.d(TAG, "Password: " + mPassword);
-                }
+            try {
+                mProxyInfo = Proxy.parseProxyInfo(proxyHost, proxyPort, proxyBypass, proxyPacUri);
+            } catch (ParseException e) {
+                Log.d(TAG, "Error parsing proxy settings");
+                finish();
+                return;
             }
-        }
 
-        // Setup broadcast receiver
-        broadcastReceiver = new CheckSSIDBroadcastReceiver(mSSID);
-        broadcastReceiver.setSSIDFoundListener(this);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(broadcastReceiver, filter);
-        // Check if wifi is enabled, and act accordingly
-        mWifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-        if (!mWifiManager.isWifiEnabled())
-            mWifiManager.setWifiEnabled(true);
-        else
-            WifiEnabled();
+            Log.d(TAG, "Trying to join:");
+            Log.d(TAG, "ssid: " + mSSID);
+            if (mPasswordType != null && mPassword != null) {
+                Log.d(TAG, "Password Type: " + mPasswordType);
+                Log.d(TAG, "Password: " + mPassword);
+            }
+            // Setup broadcast receiver
+            broadcastReceiver = new CheckSSIDBroadcastReceiver(mSSID);
+            broadcastReceiver.setSSIDFoundListener(this);
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+            registerReceiver(broadcastReceiver, filter);
+            // Check if wifi is enabled, and act accordingly
+            mWifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            if (!mWifiManager.isWifiEnabled())
+                mWifiManager.setWifiEnabled(true);
+            else
+                WifiEnabled();
+        }
         setView();
     }
 
@@ -151,16 +145,11 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
 
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-
-    }
 
     private void updateTimezone(String timezone) {
         AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         alarm.setTimeZone(timezone);
-        Toast.makeText(this, "timezone updated to: " + timezone, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "timezone updated to: " + timezone);
 
     }
 
@@ -194,10 +183,10 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
             Method methodUpdateConfiguration = amnClass.getMethod("updateConfiguration", Configuration.class);
             methodUpdateConfiguration.setAccessible(true);
             methodUpdateConfiguration.invoke(amn, config);
-            Toast.makeText(this, "language updated to: " + language, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "language updated to: " + language);
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "language updated failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "language updated failed: " + e.getMessage());
         }
     }
 
@@ -234,21 +223,24 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
         int networkId;
 
         if (wfc == null) {
-            // Wifi configuration didn't exist for this SSID, create it.
+            // Wifi configuration didn't exist for this "ssid", create it.
             wfc = new WifiConfiguration();
             updateWifiConfiguration(wfc);
             networkId = mWifiManager.addNetwork(wfc);
+            Log.d(TAG, "Created new wifi network with network id=" + Integer.toString(networkId));
         } else if (permittedToUpdate(wfc)) {
             // Wifi configuration already exists, update if we can
             updateWifiConfiguration(wfc);
             networkId = mWifiManager.updateNetwork(wfc);
+            Log.d(TAG, "Updated existing wifi network with network id=" + Integer.toString(networkId));
         } else {
             // Wifi configuration already exists, we cannot update it so just join it
             networkId = wfc.networkId;
+            Log.d(TAG, "Unable to update existing wifi network, joining existing network with network id=" + Integer.toString(networkId));
         }
 
         if (networkId == -1) {
-            Log.d(TAG, "Invalid wifi network (ensure this SSID exists, auth method and password are correct, etc.)");
+            Log.d(TAG, "Invalid wifi network (ensure this ssid exists, auth method and password are correct, etc.)");
             finish();
             return;
         }
@@ -312,7 +304,7 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
             wfc.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
             wfc.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
             wfc.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-        } else if (mPasswordType.equals(WEP_PASSWORD)) // WEP
+        } else if (mPasswordType.equals("WEP")) // WEP
         {
             wfc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
             wfc.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
@@ -329,7 +321,7 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
 
             wfc.wepKeys[0] = "\"".concat(mPassword).concat("\"");
             wfc.wepTxKeyIndex = 0;
-        } else if (mPasswordType.equals(WPA_PASSWORD)) // WPA(2)
+        } else if (mPasswordType.equals("WPA") || mPasswordType.equals("WPA2")) // WPA(2)
         {
             wfc.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
             wfc.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
