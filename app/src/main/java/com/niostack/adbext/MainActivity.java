@@ -2,35 +2,28 @@ package com.niostack.adbext;
 
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.Configuration;
-import android.os.Build;
-import android.os.Bundle;
-import android.webkit.WebView;
-import android.widget.TextView;
-import android.widget.Toast;
-
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Locale;
-import java.util.TimeZone;
-
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.ProxyInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.text.ParseException;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * need first:
@@ -68,133 +61,79 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
 
     Thread mThread;
 
-    private void printUsage() {
-        Log.d(TAG, "No datastring provided. use the following adb command:");
-        Log.d(TAG,
-                "adb shell am start" +
-                        " -n com.niostack.adbext/.MainActivity " +
-                        "-e ssid SSID " +
-                        "-e password_type [WEP|WPA] " +
-                        "-e password PASSWORD " +
-                        "\nOptional proxy args:\n" +
-                        "    -e proxy_host HOSTNAME " +
-                        "-e proxy_port PORT " +
-                        "[-e proxy_bypass COMMA,SEPARATED,LIST]\n" +
-                        "    OR\n" +
-                        "    -e proxy_pac_uri http://my.proxy.config/url\n" +
-                        "If app was granted device owner using dpm, you can unset it with:\n" +
-                        "    -e clear_device_admin true");
-        Toast.makeText(this, "This application is meant to be used with ADB",
-                Toast.LENGTH_SHORT).show();
-        finish();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setView();
-        if (getIntent().getExtras() == null){
-            finish();
-            return;
-        }
-        //设置系统时区
-        String timezone = getIntent().getStringExtra("timezone");
-        if (timezone != null) {
-            updateTimezone(timezone);
-        }
-        //设置系统语言
-        String language = getIntent().getStringExtra("language");
-        if (language != null) {
-            updateLocale(language);
-        }
-        boolean clearDeviceAdmin = getIntent().getExtras().containsKey(CLEAR_DEVICE_ADMIN);
-
-        if (clearDeviceAdmin) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                clearDeviceOwner();
-            } else {
-                throw new UnsupportedOperationException("API level 21 or higher required for this");
+        if (getIntent().getExtras() != null) {
+            //设置系统时区
+            String timezone = getIntent().getStringExtra("timezone");
+            if (timezone != null) {
+                updateTimezone(timezone);
             }
-            finish();
-            return;
-        }
+            //设置系统语言
+            String language = getIntent().getStringExtra("language");
+            if (language != null) {
+                updateLocale(language);
+            }
+            boolean clearDeviceAdmin = getIntent().getExtras().containsKey(CLEAR_DEVICE_ADMIN);
 
-        // Get Content
-        mSSID = getIntent().getStringExtra(SSID);
-        if (mSSID!=null) {
-            mPasswordType = getIntent().getStringExtra(PASSWORD_TYPE);
-            mPassword = getIntent().getStringExtra(PASSWORD);
-
-            String proxyHost = getIntent().getStringExtra(PROXY_HOST);
-            String proxyPort = getIntent().getStringExtra(PROXY_PORT);
-            String proxyBypass = getIntent().getStringExtra(PROXY_BYPASS);
-            String proxyPacUri = getIntent().getStringExtra(PROXY_PAC_URI);
-
-            // Validate
-            if ((mSSID == null) || // SSID REQUIRED
-                    (mPasswordType != null && mPassword == null) || // PASSWORD REQUIRED IF PASSWORD TYPE GIVEN
-                    (mPassword != null && mPasswordType == null) || // PASSWORD TYPE REQUIRED IF PASSWORD GIVEN
-                    (mPasswordType != null && !mPasswordType.equals(WPA_PASSWORD) && !mPasswordType.equals(WEP_PASSWORD))) // PASSWORD TYPE MUST BE NULL OR WPA OR WEP
-            {
-                printUsage();
+            if (clearDeviceAdmin) {
+                clearDeviceOwner();
+                finish();
                 return;
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // Get Content
+            mSSID = getIntent().getStringExtra(SSID);
+            if (mSSID != null) {
+                mPasswordType = getIntent().getStringExtra(PASSWORD_TYPE);
+                mPassword = getIntent().getStringExtra(PASSWORD);
+
+                String proxyHost = getIntent().getStringExtra(PROXY_HOST);
+                String proxyPort = getIntent().getStringExtra(PROXY_PORT);
+                String proxyBypass = getIntent().getStringExtra(PROXY_BYPASS);
+                String proxyPacUri = getIntent().getStringExtra(PROXY_PAC_URI);
+
+                // Validate
+                if ((mPasswordType != null && mPassword == null) || // PASSWORD REQUIRED IF PASSWORD TYPE GIVEN
+                        (mPassword != null && mPasswordType == null) || // PASSWORD TYPE REQUIRED IF PASSWORD GIVEN
+                        (mPasswordType != null && !mPasswordType.equals(WPA_PASSWORD) && !mPasswordType.equals(WEP_PASSWORD))) // PASSWORD TYPE MUST BE NULL OR WPA OR WEP
+                {
+                    return;
+                }
+
                 try {
                     mProxyInfo = Proxy.parseProxyInfo(proxyHost, proxyPort, proxyBypass, proxyPacUri);
                 } catch (ParseException e) {
                     Log.d(TAG, "Error parsing proxy settings");
-                    printUsage();
                     return;
                 }
-            }
 
-            Log.d(TAG, "Trying to join:");
-            Log.d(TAG, "SSID: " + mSSID);
-            if (mPasswordType != null && mPassword != null) {
-                Log.d(TAG, "Password Type: " + mPasswordType);
-                Log.d(TAG, "Password: " + mPassword);
+                Log.d(TAG, "Trying to join:");
+                Log.d(TAG, "SSID: " + mSSID);
+                if (mPasswordType != null && mPassword != null) {
+                    Log.d(TAG, "Password Type: " + mPasswordType);
+                    Log.d(TAG, "Password: " + mPassword);
+                }
             }
         }
 
-        // Setup layout
-
-        LinearLayout layout = new LinearLayout(this);
-        setContentView(layout);
-
-        layout.setGravity(Gravity.CENTER);
-        layout.setOrientation(LinearLayout.VERTICAL);
-
-        LayoutParams params = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-
-        TextView textview = new TextView(this);
-        textview.setText(getString(R.string.trying_to_connect_to));
-        textview.setTextSize(20);
-        layout.addView(textview, params);
-
-        TextView SSIDtextview = new TextView(this);
-        SSIDtextview.setText(mSSID);
-        layout.addView(SSIDtextview, params);
-
         // Setup broadcast receiver
-
         broadcastReceiver = new CheckSSIDBroadcastReceiver(mSSID);
         broadcastReceiver.setSSIDFoundListener(this);
-
         IntentFilter filter = new IntentFilter();
         filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(broadcastReceiver, filter);
-
         // Check if wifi is enabled, and act accordingly
         mWifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-
         if (!mWifiManager.isWifiEnabled())
             mWifiManager.setWifiEnabled(true);
         else
             WifiEnabled();
+        setView();
     }
 
 
@@ -207,6 +146,8 @@ public class MainActivity extends Activity implements CheckSSIDBroadcastReceiver
         //获取当前手机系统时区设置
         String timeZone = TimeZone.getDefault().getID();
         et_current_timezone.setText(timeZone);
+        TextView SSIDtextview = (TextView) findViewById(R.id.SSIDtextview);
+        SSIDtextview.setText(mSSID);
 
     }
 
